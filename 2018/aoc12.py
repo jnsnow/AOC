@@ -51,6 +51,28 @@ def p1(state, rules):
         sim.tick()
     return sim.value()
 
+def p2(state, rules, cycles=50000000000):
+    # This really feels like cheating because I can't guarantee it produces a correct result,
+    # but it does definitely produce a result which was correct for me, so...
+    #
+    # ¯\_(ツ)_/¯
+    #
+    sim = simulation(state, rules)
+    last = sim.value()
+    lastdiff = 0
+    for generation in range(1, cycles + 1):
+        sim.tick()
+        current = sim.value()
+        difference = current - last
+        if difference == lastdiff:
+            # The simulation begins to cycle here, mercifully
+            break
+        last = current
+        lastdiff = difference
+    remaining = cycles - generation
+    return current + (remaining * difference)
+
 def aoc12(filename):
     state, rules = load(filename)
-    return [p1(state, rules), None]
+    return [p1(state, rules),
+            p2(state, rules)]
