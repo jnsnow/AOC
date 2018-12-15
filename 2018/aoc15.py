@@ -1,6 +1,7 @@
 import logging
 import re
 import itertools
+import os
 
 class coordinate:
     def __init__(self, x, y):
@@ -179,11 +180,16 @@ class Board:
     def enemies(self, asking_type):
         return [npc for npc in self.npcs if npc.type != asking_type and npc.alive]
 
-    def run(self):
+    def run(self, visual=False):
         while True:
+            if visual:
+                os.system('clear')
+                self.print_map()
             try:
                 self.round()
             except StopIteration:
+                os.system('clear')
+                self.print_map()
                 hp = sum([n.hp for n in self.npcs if n.alive])
                 return self.rounds * hp
 
