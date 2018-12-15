@@ -194,8 +194,9 @@ class Board:
             try:
                 self.round()
             except StopIteration:
-                os.system('clear')
-                self.print_map()
+                if visual:
+                    os.system('clear')
+                    self.print_map()
                 hp = sum([n.hp for n in self.npcs if n.alive])
                 return self.rounds * hp
 
