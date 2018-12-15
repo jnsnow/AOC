@@ -236,17 +236,6 @@ def p1(filename):
     return board.run()
 
 def p2(filename, visual=False):
-    elfpower = itertools.count(3)
-    for ep in elfpower:
-        board = Board(filename, elfpanic=True, elfpower=ep)
-        try:
-            result = board.run(visual=visual)
-            return result
-        except ArithmeticError:
-            continue
-    raise Exception(None)
-
-def p2(filename, visual=False):
     results = {}
     epr = [3, 200]
     # Use a binary search between 3,200
