@@ -246,5 +246,20 @@ def p2(filename, visual=False):
             continue
     raise Exception(None)
 
+def p2(filename, visual=False):
+    results = {}
+    epr = [3, 200]
+    # Use a binary search between 3,200
+    while True:
+        ep = int((epr[1] - epr[0])/2 + epr[0])
+        board = Board(filename, elfpanic=True, elfpower=ep)
+        try:
+            results[ep] = board.run(visual=visual)
+            epr[1] = ep
+        except ArithmeticError:
+            epr[0] = ep
+        if epr[1] - epr[0] == 1:
+            return results[epr[1]]
+
 def aoc15(filename):
     return [p1(filename), p2(filename)]
