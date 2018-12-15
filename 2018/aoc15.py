@@ -37,6 +37,7 @@ class NPC:
         self.hp = 200
         self.alive = True
         self.candidates = []
+        self.panic = False
 
     def __repr__(self):
         return "NPC(%d,%s,%d,%d,%d)" % (self.id, self.type, self.pos.x, self.pos.y, self.hp)
@@ -144,6 +145,8 @@ class NPC:
         logging.info("%s:%d has died!", self.type, self.id)
         self.alive = False
         self.board.set_tile(self.pos, '.')
+        if self.panic:
+            raise ArithmeticError("%s:%d has died!" % (self.type, self.id))
 
     def adjacent(self):
         return self.pos.adjacent()
@@ -152,7 +155,7 @@ class NPC:
         return self.pos in other.adjacent()
 
 class Board:
-    def __init__(self, filename, elfpower=3):
+    def __init__(self, filename, elfpanic=False, elfpower=3):
         self.rounds = 0
         self.state = []
         self.npcs = []
@@ -163,6 +166,9 @@ class Board:
             lineNo = next(line_counter)
             for m in re.finditer('[GE]', line):
                 npc = NPC(self, next(npc_counter), m.group(), m.start(), lineNo)
+                if elfpanic and npc.type == 'E':
+                    npc.power = elfpower
+                    npc.panic = True
                 self.npcs.append(npc)
             self.state.append(list(line.strip()))
 
@@ -228,6 +234,16 @@ def p1(filename):
     board = Board(filename)
     return board.run()
 
+def p2(filename, visual=False):
+    elfpower = itertools.count(3)
+    for ep in elfpower:
+        board = Board(filename, elfpanic=True, elfpower=ep)
+        try:
+            result = board.run(visual=visual)
+            return result
+        except ArithmeticError:
+            continue
+    raise Exception(None)
+
 def aoc15(filename):
-    # part two will be later ...
-    return [p1(filename), None]
+    return [p1(filename), p2(filename)]
