@@ -45,14 +45,12 @@ class NPC:
     def __str__(self):
         return repr(self)
 
-    def find_candidates(self, targets):
-        self.candidates = []
-        for target in targets:
-            logging.debug("%s:%d considering target %s:%d", self.type, self.id, target.type, target.id)
-            if self.in_range(target):
-                self.candidates.append(target)
+    def find_candidates(self):
+        self.candidates = self.board.enemies_near(self)
 
-    def _movement_candidates(self, targets):
+    def _movement_candidates(self):
+        targets = self.board.enemies(self.type)
+        assert(targets)
         destinations = []
         for target in targets:
             for coord in target.adjacent():
@@ -98,9 +96,9 @@ class NPC:
         candidates = sorted(candidates, key=lambda p: (p.y, p.x))
         return candidates[0]
 
-    def move(self, targets):
+    def move(self):
         logging.debug("%s:%d attempting to move...", self.type, self.id)
-        destinations = self._movement_candidates(targets)
+        destinations = self._movement_candidates()
         if not destinations:
             return
 
@@ -110,10 +108,7 @@ class NPC:
         logging.debug("%s:%d wants to move towards %s", self.type, self.id, str(destination))
 
         step = self._determine_step(destination, distance)
-        assert(self.board.tile(step) == '.')
-        self.board.set_tile(self.pos, '.')
-        self.pos = step
-        self.board.set_tile(self.pos, self.type)
+        self.board.move(self, step)
         return True
 
     def attack(self):
@@ -125,14 +120,13 @@ class NPC:
     def turn(self):
         if not self.alive:
             return
-        targets = self.board.enemies(self.type)
-        if not targets:
+        if sum(self.board.factions.values()) == self.board.factions[self.type]:
             raise StopIteration("Simulation is over")
-        self.find_candidates(targets)
+        self.find_candidates()
         if not self.candidates:
-            if not self.move(targets):
+            if not self.move():
                 return
-            self.find_candidates(targets)
+            self.find_candidates()
         self.attack()
 
     def damage(self, amount):
@@ -144,7 +138,7 @@ class NPC:
     def die(self):
         logging.info("%s:%d has died!", self.type, self.id)
         self.alive = False
-        self.board.set_tile(self.pos, '.')
+        self.board.remove(self)
         if self.panic:
             raise ArithmeticError("%s:%d has died!" % (self.type, self.id))
 
@@ -159,6 +153,9 @@ class Board:
         self.rounds = 0
         self.state = []
         self.npcs = []
+        self.elfpower = elfpower
+        self.objects = {}
+        self.factions = {}
         f = open(filename, "r")
         line_counter = itertools.count()
         npc_counter = itertools.count()
@@ -170,6 +167,8 @@ class Board:
                     npc.power = elfpower
                     npc.panic = True
                 self.npcs.append(npc)
+                self.objects[npc.pos] = npc
+                self.factions[npc.type] = self.factions.get(npc.type, 0) + 1
             self.state.append(list(line.strip()))
 
     def round(self):
@@ -230,6 +229,29 @@ class Board:
                     logging.debug("queueing (%d,%d)", near.x, near.y)
                     queue.append((near, distance + 1))
         return None
+
+    def move(self, whom, to):
+        assert(self.tile(to) == '.')
+        del self.objects[whom.pos]
+        self.set_tile(whom.pos, '.')
+        whom.pos = to
+        self.objects[whom.pos] = whom
+        self.set_tile(whom.pos, whom.type)
+
+    def remove(self, whom):
+        del self.objects[whom.pos]
+        self.set_tile(whom.pos, '.')
+        self.factions[whom.type] -= 1
+
+    def enemies_near(self, whom):
+        enemies = []
+        for pos in whom.adjacent():
+            if pos in self.objects:
+                other = self.objects[pos]
+                if other.type != whom.type and other.alive:
+                    enemies.append(self.objects[pos])
+        return enemies
+
 
 def p1(filename):
     board = Board(filename)
