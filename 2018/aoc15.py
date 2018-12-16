@@ -113,7 +113,7 @@ class NPC:
 
     def attack(self):
         if self.candidates:
-            target = min(self.candidates, key=lambda n: n.hp)
+            target = min(self.candidates, key=lambda n: (n.hp, n.pos.y, n.pos.x))
             logging.info("%s:%d attacks %s:%d!", self.type, self.id, target.type, target.id)
             target.damage(self.power)
 
@@ -153,7 +153,6 @@ class Board:
         self.rounds = 0
         self.state = []
         self.npcs = []
-        self.elfpower = elfpower
         self.objects = {}
         self.factions = {}
         f = open(filename, "r")
