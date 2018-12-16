@@ -65,8 +65,15 @@ class NPC:
         return destinations
 
     def _nearest_destination(self, destinations):
-        distances = [self.board.distance(self.pos, there) for there in destinations]
-        valid_distances = [d for d in distances if d is not None]
+        distances = []
+        valid_distances = []
+        maximum = float("inf")
+        for dest in destinations:
+            distance = self.board.distance(self.pos, dest, maximum)
+            distances.append(distance)
+            if distance is not None:
+                valid_distances.append(distance)
+                maximum = min(distance, maximum)
         if not valid_distances:
             logging.info("%s:%d can't reach any of their destinations", self.type, self.id)
             return None, None
@@ -204,11 +211,9 @@ class Board:
     def set_tile(self, coord, char):
         self.state[coord.y][coord.x] = char
 
-    def distance(self, start, end):
+    def distance(self, start, end, maximum=None):
         visited = set()
         queue = []
-        if (start == end):
-            return 0
         queue.append((start, 0))
         while queue:
             queue = sorted(queue, key=lambda q: q[1])
@@ -217,16 +222,20 @@ class Board:
                 # oops, something visited us in the meantime?
                 continue
             logging.debug("visiting (%d,%d) @ distance %d", here.x, here.y, distance)
+            if here == end:
+                logging.debug("found %s --> %s, distance %d", str(start), str(end), distance)
+                return distance
             visited.add(here)
+            # OK, investigating children/neighbors:
+            distance += 1
+            if maximum and distance > maximum:
+                continue
             for near in here.adjacent():
                 if near in visited:
                     continue
-                if near == end:
-                    logging.debug("found %s --> %s, distance %d", str(start), str(end), distance + 1)
-                    return distance + 1
                 elif self.tile(near) == '.':
                     logging.debug("queueing (%d,%d)", near.x, near.y)
-                    queue.append((near, distance + 1))
+                    queue.append((near, distance))
         return None
 
     def move(self, whom, to):
