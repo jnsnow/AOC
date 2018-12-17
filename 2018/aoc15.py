@@ -2,6 +2,13 @@ import logging
 import re
 import itertools
 import os
+from sys import modules
+try:
+    import sty
+    from x256 import x256
+except Exception as e:
+    print(e)
+    logging.warn("Falling back to monochrome output")
 
 class coordinate:
     def __init__(self, x, y):
@@ -184,9 +191,31 @@ class Board:
             npc.turn()
         self.rounds += 1
 
+    def print_row(self, y, color=False):
+        # Monochrome:
+        if not color:
+            print(''.join(self.state[y]))
+            return
+        # Spicy:
+        out = []
+        row = self.state[y]
+        for x in range(len(row)):
+            cell = row[x]
+            if cell == 'G' or cell == 'E':
+                npc = self.objects[coordinate(x, y)]
+                health = npc.hp / 200.0;
+                green = health
+                red = 1 - health
+                ansi = x256.from_rgb(int(red * 255), int(green * 255), 0)
+                out.append("%s%s%s" % (sty.fg(ansi), cell, sty.fg.rs))
+            else:
+                out.append(cell)
+        print(''.join(out))
+
     def print_map(self):
-        for row in self.state:
-            print(''.join(row))
+        color = 'sty' in modules and 'x256' in modules
+        for y in range(len(self.state)):
+            self.print_row(y, color)
 
     def enemies(self, asking_type):
         return [npc for npc in self.npcs if npc.type != asking_type and npc.alive]
