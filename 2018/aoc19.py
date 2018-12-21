@@ -1,4 +1,4 @@
-from asm import Registers, Operations
+from asm import Registers, asm
 from collections import namedtuple
 import logging
 
@@ -6,17 +6,14 @@ import logging
 Instruction = namedtuple('Instruction', ['op', 'a', 'b', 'c'])
 
 def run(r, ipreg, program):
-    ip = 0
+    r.ip = 0
     while True:
-        r[ipreg] = ip
-        #logging.debug("ip=%d %s ", insp, str(r.state))
-        instr = program[ip]
-        #logging.debug("%s ", program[insp])
-        Operations._table[instr.op](r, instr[1:])
-        #logging.debug("%s", str(r.state))
-        ip = r[ipreg]
-        ip += 1
-        if ip < 0 or ip >= len(program):
+        r[ipreg] = r.ip
+        instr = program[r.ip]
+        asm[instr.op].execute(r, *instr[1:])
+        r.ip = r[ipreg]
+        r.ip += 1
+        if r.ip < 0 or r.ip >= len(program):
             return r[0]
 
 def p1(program, ipreg):
