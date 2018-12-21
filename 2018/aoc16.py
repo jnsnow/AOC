@@ -1,4 +1,4 @@
-from asm import *
+from asm import asm, Registers
 from collections import namedtuple
 import re
 import logging
