@@ -43,9 +43,9 @@ def p1(tests, threshold=3):
     count = 0
     for test in tests:
         candidates = 0
-        for op in Operations._table.values():
+        for op in asm:
             r = Registers(test.before)
-            op(r, test.instruction[1:])
+            asm[op].execute(r, *test.instruction[1:])
             if r == test.after:
                 candidates += 1
         if candidates >= threshold:
@@ -55,7 +55,8 @@ def p1(tests, threshold=3):
 def run_program(opmap, program):
     r = Registers()
     for instr in program:
-        opmap[instr.opcode](r, instr[1:])
+        op = asm[opmap[instr.opcode]]
+        op.execute(r, *instr[1:])
     return r[0]
 
 def p2(tests, program):
@@ -71,9 +72,9 @@ def p2(tests, program):
 
         # See which instructions this test behaves like
         possibly = set()
-        for op in Operations._table.values():
+        for op in asm:
             r = Registers(test.before)
-            op(r, test.instruction[1:])
+            asm[op].execute(r, *test.instruction[1:])
             if r == test.after:
                 possibly.add(op)
 
@@ -87,7 +88,7 @@ def p2(tests, program):
         # Success?
         if len(possibly) == 1:
             target = list(possibly)[0]
-            logging.info("opcode %d is probably %s", opcode, target.__name__)
+            logging.info("opcode %d is probably %s", opcode, target)
             solved[opcode] = target
 
         # Store candidates for future tests to narrow down
