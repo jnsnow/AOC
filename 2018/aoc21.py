@@ -1,9 +1,5 @@
-from asm import Registers
-from asm import Operations
-from collections import namedtuple
+from asm import Registers, asm, Computer, Instruction
 import logging
-
-Instruction = namedtuple('Instruction', ['op', 'a', 'b', 'c'])
 
 def load(filename):
     program = []
@@ -16,20 +12,6 @@ def load(filename):
             instr = Instruction(line[0], *[int(n) for n in line[1:]])
             program.append(instr)
     return ipreg, program
-
-def run(r, ipreg, program):
-    ip = 0
-    while True:
-        r[ipreg] = ip
-        #logging.debug("ip=%d %s ", insp, str(r.state))
-        instr = program[ip]
-        #logging.debug("%s ", program[insp])
-        Operations._table[instr.op](r, instr[1:])
-        #logging.debug("%s", str(r.state))
-        ip = r[ipreg]
-        ip += 1
-        if ip < 0 or ip >= len(program):
-            return
 
 def decompiled(initial):
     # This function is based on my puzzle input, which I assume to be
@@ -61,7 +43,8 @@ def decompiled(initial):
 
 def aoc21(filename):
     ipreg, program = load(filename)
-    r = Registers(n=6)
+    sim = Computer(ipreg, program, n=6)
+    sim.decompile()
     # This really cheats and assumes we all have the same fundamental program ...
     assert(program[7].op == 'seti')
     # And assumes this the parameter of that program ...
