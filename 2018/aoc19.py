@@ -1,31 +1,14 @@
-from asm import Registers, asm
-from collections import namedtuple
+from asm import Registers, asm, Instruction, Computer
 import logging
 
-# Instructions here use a symbolic op instead of numeric opcode
-Instruction = namedtuple('Instruction', ['op', 'a', 'b', 'c'])
-
-def run(r, ipreg, program):
-    r.ip = 0
-    while True:
-        r[ipreg] = r.ip
-        instr = program[r.ip]
-        asm[instr.op].execute(r, *instr[1:])
-        r.ip = r[ipreg]
-        r.ip += 1
-        if r.ip < 0 or r.ip >= len(program):
-            return r[0]
-
 def p1(program, ipreg):
-    r = Registers(n=6)
-    result = run(r, ipreg, program)
-    return result
+    sim = Computer(ipreg, program, n=6)
+    return sim.run()
 
 def p2(program, ipreg):
-    r = Registers(n=6)
-    r[0] = 1
-    result = run(r, ipreg, program)
-    return result
+    sim = Computer(ipreg, program, n=6)
+    sim.r[0] = 1
+    return sim.run()
 
 def aoc19(filename):
     program = []

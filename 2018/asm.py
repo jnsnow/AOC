@@ -81,6 +81,26 @@ asm = { "addr": ElfOp('+',  operator.add,  2, [0,1], []   ),
         "eqrr": ElfOp('==', operator.eq,   2, [0,1], []   )}
 
 
+Instruction = namedtuple('Instruction', ['op', 'a', 'b', 'c'])
+
+class Computer:
+    def __init__(self, ipreg, instructions, n=6):
+        self.ipreg = ipreg
+        self.instructions = instructions
+        self.r = Registers(n=n)
+
+    def run(self):
+        self.r.ip = 0
+        while True:
+            self.r[self.ipreg] = self.r.ip
+            instr = self.instructions[self.r.ip]
+            asm[instr.op].execute(self.r, *instr[1:])
+            self.r.ip = self.r[self.ipreg]
+            self.r.ip += 1
+            if self.r.ip < 0 or self.r.ip >= len(self.instructions):
+                return self.r[0]
+
+
 class Operations:
     _table = {}
 
