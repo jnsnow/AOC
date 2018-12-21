@@ -100,6 +100,10 @@ class Computer:
             if self.r.ip < 0 or self.r.ip >= len(self.instructions):
                 return self.r[0]
 
+    def decompile(self):
+        for ip, inst in enumerate(self.instructions):
+            self.r.ip = ip
+            asm[inst.op].decompile(self.r, *inst[1:])
 
 class Operations:
     _table = {}
