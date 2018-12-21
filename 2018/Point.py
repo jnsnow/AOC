@@ -14,15 +14,15 @@ class Point(BasicPoint):
     def west(self, n=1):
         return type(self)(self.x - n, self.y)
 
-    # Secondaries
+    # Ordinals
     def northeast(self, n=1):
-        return type(self)(self.x + 1, self.y - n)
+        return type(self)(self.x + n, self.y - n)
     def southeast(self, n=1):
-        return type(self)(self.x + 1, self.y + n)
+        return type(self)(self.x + n, self.y + n)
     def southwest(self, n=1):
-        return type(self)(self.x - 1, self.y + n)
+        return type(self)(self.x - n, self.y + n)
     def northwest(self, n=1):
-        return type(self)(self.x + 1, self.y - n)
+        return type(self)(self.x + n, self.y - n)
 
     # Cardinal Aliases
     def up(self, *args):
