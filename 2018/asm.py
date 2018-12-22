@@ -75,10 +75,17 @@ class ElfOp(ElfProto):
             b_val = r.ip
 
         # replace assignments to IPREG with jumps, with some caveats.
+        def jump_target(n):
+            tgt = n + 1
+            if bound is not None and tgt >= bound:
+                return "jend"
+            else:
+                return "j{:02d}".format(tgt)
+
         if ip_name == c_val:
             try:
                 rhs = self.fn(a_val, b_val)
-                print("j{:02d}: goto j{:02d};".format(r.ip, rhs + 1))
+                print("j{:02d}: goto {:s};".format(r.ip, jump_target(rhs)))
                 return
             except TypeError:
                 var = a_val if isinstance(a_val, str) else b_val
@@ -87,9 +94,9 @@ class ElfOp(ElfProto):
                 # Assume that any non-integral A-or-B must be a binary value.
                 # Further assume that we will never have two variables.
                 print("j{:02d}: if ({:s}) {{".format(r.ip, var))
-                print("         goto j{:02d};".format(self.fn(value, 1) + 1))
+                print("         goto {:s};".format(jump_target(self.fn(value, 1))))
                 print("     } else {")
-                print("         goto j{:02d};".format(self.fn(value, 0) + 1))
+                print("         goto {:s};".format(jump_target(self.fn(value, 0))))
                 print("     }")
                 return
 
@@ -160,14 +167,23 @@ class Computer:
 
     def decompile(self):
         """Given a full set of instructions, print out a workable C program."""
+        bound = len(self.instructions)
+
+        # Preamble
         print("#include <stdio.h>")
         print("#include <stdint.h>")
         print("int main(int argc, char *argv[]) {");
+
+        # Variable initializations
         for n,r in enumerate(self.r.state):
-            print("uint64_t %s = %dull;" % (self.r.name(n), r))
+            print("     uint64_t %s = %dull;" % (self.r.name(n), r))
+
+        # Decompiled instructions
         for ip, inst in enumerate(self.instructions):
             self.r.ip = ip
-            asm[inst.op].decompile(self.r, *inst[1:])
+            asm[inst.op].decompile(self.r, *inst[1:], bound=bound)
+
+        # End of program
         print(" jend:")
         varstrs = []
         variables = []
@@ -176,23 +192,27 @@ class Computer:
             variables.append("%c" % self.r.name(i))
         fstr = '; '.join(varstrs)
         vstr = ', '.join(variables)
-        print("fprintf(stderr, \"%s\\n\", %s);" % (fstr, vstr))
-        print("return 0;")
+        print("     fprintf(stderr, \"%s\\n\", %s);" % (fstr, vstr))
+        print("     return 0;")
         print("}")
 
     def detect_registers(self):
         r = max(asm[inst.op].register_scan(None, *inst[1:]) for inst in self.instructions)
         return r + 1
 
-def load(filename):
+def load_from_stream(f):
     program = []
-    with open(filename, 'r') as f:
-        line = f.readline().strip()
-        ipreg = int(line.split('#ip ')[1])
-        logging.debug("#ip %d", ipreg)
-        for line in f:
-            line = line.strip().split(' ')
-            instr = Instruction(line[0], *[int(n) for n in line[1:]])
-            program.append(instr)
-
+    ipreg = None
+    for line in f:
+        if line[0] == '#':
+            ipreg = int(line.split('#ip ')[1])
+            logging.debug("#ip %d", ipreg)
+            continue
+        line = line.strip().split(' ')
+        instr = Instruction(line[0], *[int(n) for n in line[1:]])
+        program.append(instr)
     return program, ipreg
+
+def load(filename):
+    with open(filename, 'r') as f:
+        return load_from_stream(f)
