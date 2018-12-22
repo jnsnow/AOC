@@ -1,17 +1,5 @@
-from asm import Registers, asm, Computer, Instruction
+import asm
 import logging
-
-def load(filename):
-    program = []
-    with open(filename, 'r') as f:
-        line = f.readline().strip()
-        ipreg = int(line.split('#ip ')[1])
-        logging.debug("#ip %d", ipreg)
-        for line in f:
-            line = line.strip().split(' ')
-            instr = Instruction(line[0], *[int(n) for n in line[1:]])
-            program.append(instr)
-    return ipreg, program
 
 def decompiled(initial):
     # This function is based on my puzzle input, which I assume to be
@@ -42,8 +30,8 @@ def decompiled(initial):
             fvals.add(f)
 
 def aoc21(filename):
-    ipreg, program = load(filename)
-    sim = Computer(ipreg, program, n=6)
+    program, ipreg = asm.load(filename)
+    sim = asm.Computer(program, n=6, ipreg=ipreg)
     sim.decompile()
     # This really cheats and assumes we all have the same fundamental program ...
     assert(program[7].op == 'seti')
