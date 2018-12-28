@@ -23,6 +23,6 @@ def p2(line):
     return min(scores.values())
 
 def aoc05(filename):
-    f = open("/home/nago/Documents/input5.txt", "r")
+    f = open(filename, "r")
     line = f.readline().strip()
     return [p1(line), p2(line)]

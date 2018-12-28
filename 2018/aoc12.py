@@ -38,7 +38,7 @@ class simulation:
         return sum(self.state.keys())
 
 def load(filename):
-    f = open("/home/nago/Documents/input12.txt", "r")
+    f = open(filename, "r")
     line = f.readline()
     state = line.split('initial state:' )[1].strip()
     _ = f.readline()
