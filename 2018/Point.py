@@ -46,9 +46,20 @@ class Point(BasicPoint):
     def adjacent(self):
         return self.neighbors()
 
-    def ring(self):
-        # Return all surrounding 8 points, careful to exclude ourselves.
-        return [type(self)(x, y) for x, y in
-                itertools.product([self.x - 1, self.x, self.x + 1],
-                                  [self.y - 1, self.y, self.y + 1])
-                if (x, y) != self]
+    def ring(self, n=1):
+        """Generate all points in the nth ring outward from this point,
+        in clockwise order starting at the upper-left corner.
+        at n=1, this is the 8 surrounding points.
+        at n=2, this is the 16 points that neighbor the previous 8."""
+        # Top Row, left-to-right;
+        for dx in range(-n, n + 1):
+            yield type(self)(self.x + dx, self.y - n)
+        # Right Wall, top-to-bottom:
+        for dy in range(-n + 1, n):
+            yield type(self)(self.x + n, self.y + dy)
+        # Bottom Row, right-to-left:
+        for dx in reversed(range(-n, n + 1)):
+            yield type(self)(self.x + dx, self.y + n)
+        # Left Well, bottom-to-top:
+        for dy in reversed(range(-n + 1, n)):
+            yield type(self)(self.x - n, self.y + dy)
