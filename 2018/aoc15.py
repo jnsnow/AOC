@@ -3,6 +3,7 @@ import re
 import itertools
 import os
 from sys import modules
+from Point import Point
 try:
     import sty
     from x256 import x256
@@ -10,36 +11,12 @@ except Exception as e:
     print(e)
     logging.warn("Falling back to monochrome output")
 
-class coordinate:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-
-    def adjacent(self):
-        return [coordinate(self.x, self.y + 1),
-                coordinate(self.x, self.y - 1),
-                coordinate(self.x + 1, self.y),
-                coordinate(self.x - 1, self.y)]
-
-    def __eq__(self, other):
-        return self.x == other.x and self.y == other.y
-
-    def __hash__(self):
-        return hash((self.x, self.y))
-
-    def __repr__(self):
-        return "coordinate(x=%d, y=%d)" % (self.x, self.y)
-
-    def __str__(self):
-        return "(%d,%d)" % (self.x, self.y)
-
-
 class NPC:
     def __init__(self, board, id, type, x, y):
         self.board = board
         self.id = id
         self.type = type
-        self.pos = coordinate(x, y)
+        self.pos = Point(x, y)
         self.power = 3
         self.hp = 200
         self.alive = True
@@ -60,9 +37,9 @@ class NPC:
         assert(targets)
         destinations = []
         for target in targets:
-            for coord in target.adjacent():
-                if self.board.tile(coord) == '.':
-                    destinations.append(coord)
+            for point in target.adjacent():
+                if self.board.tile(point) == '.':
+                    destinations.append(point)
 
         if not destinations:
             logging.info("%s:%d has no available destinations", self.type, self.id)
@@ -202,7 +179,7 @@ class Board:
         for x in range(len(row)):
             cell = row[x]
             if cell == 'G' or cell == 'E':
-                npc = self.objects[coordinate(x, y)]
+                npc = self.objects[Point(x, y)]
                 health = npc.hp / 200.0;
                 green = health
                 red = 1 - health
@@ -234,11 +211,11 @@ class Board:
                 hp = sum([n.hp for n in self.npcs if n.alive])
                 return self.rounds * hp
 
-    def tile(self, coord):
-        return self.state[coord.y][coord.x]
+    def tile(self, point):
+        return self.state[point.y][point.x]
 
-    def set_tile(self, coord, char):
-        self.state[coord.y][coord.x] = char
+    def set_tile(self, point, char):
+        self.state[point.y][point.x] = char
 
     def distance(self, start, end, maximum=None):
         visited = set()
